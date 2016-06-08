@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>WTFGame</title>
+	<style>
+		body{
+			overflow: hidden;
+			background-color: rgb(40,62,89);
+		}
+		#mycanvas{
+			border: 1px solid black;
+			display: none;
+			margin: 0 auto;
+			background-color: rgb(113,203,225);
+		}
+		#ipt{
+			width: 800px;
+			height: 500px;
+			border: 1px solid black;
+			display: block;
+			margin: 0 auto;
+			background-color: rgb(113,203,225);
+		}
+		#tips{
+			color: red;
+			font-size: 10px;
+		}
+	</style>
+	<script src="/socket.io/socket.io.js" type="text/javascript"></script>
+</head>
+<body>
+	<div id="ipt">
+		<center style="margin-top: 240px;">请输入昵称：<input type="text" id="text"><input type="button" value="确认" onclick="setName();"></center><br/>
+		<center><div id="tips"></div></center>
+	</div>
+	<canvas id="mycanvas" width="800" height="500"></canvas>
+</body>
+	<script type="text/javascript" src="js/load_resources.js"></script>
+	<script type="text/javascript" src="js/Class.js"></script>
+	<script type="text/javascript" src="js/keypress.js"></script>
+	<script type="text/javascript" src="js/login.js"></script>
+	<script type="text/javascript" src="js/net.js"></script>
+</html>

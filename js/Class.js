@@ -28,7 +28,8 @@ function Player(pos,sprite_index,name,index){
 }
 
 Player.prototype.setCol=function(){   //设置角色的八个碰撞检测点
-	this.col=new Array(new Position(this.position.x+16-this.col_width/2,this.position.y+32-this.col_height+3),new Position(this.position.x+16-this.col_width/2,this.position.y+32-this.col_height+this.col_height-3),new Position(this.position.x+16-this.col_width/2+1,this.position.y+32-this.col_height+3),new Position(this.position.x+16-this.col_width/2+this.col_width-1,this.position.y+32-this.col_height+3),new Position(this.position.x+16-this.col_width/2+this.col_width,this.position.y+32-this.col_height+3),new Position(this.position.x+16-this.col_width/2+this.col_width,this.position.y+32-this.col_height+this.col_height-3),new Position(this.position.x+16-this.col_width/2+1,this.position.y+32),new Position(this.position.x+16-this.col_width/2+this.col_width-1,this.position.y+32));
+	this.col=new Array(new Position(this.position.x+14-this.col_width/2-1,this.position.y+32-this.col_height+3),new Position(this.position.x+14-this.col_width/2-1,this.position.y+32-this.col_height+this.col_height-3),new Position(this.position.x+14-this.col_width/2+2,this.position.y+32-this.col_height+3),new Position(this.position.x+14+this.col_width/2-3,this.position.y+32-this.col_height+3),new Position(this.position.x+14-this.col_width/2+this.col_width,this.position.y+32-this.col_height+3),new Position(this.position.x+14-this.col_width/2+this.col_width,this.position.y+32-this.col_height+this.col_height-3),new Position(this.position.x+14-this.col_width/2+2,this.position.y+32),new Position(this.position.x+14+this.col_width/2-3,this.position.y+32));
+	e.ctx.fillStyle="black";
 }
 
 Player.prototype.playanime=function(){		//播放角色动画
@@ -88,6 +89,7 @@ Player.prototype.push=function(dir){
 	}else{
 		this.position.x+=0.1;
 	}
+	this.setCol();
 }
 
 Player.prototype.action=function(){		//每个时间间隔角色的状态改变
@@ -157,6 +159,26 @@ Player.prototype.action=function(){		//每个时间间隔角色的状态改变
 					}
 				}
 			}
+			for(var j=1;j<e.Players.length;j++){
+				if(e.Players[j].isPointInPath(e.Players[0].col[6])||e.Players[j].isPointInPath(e.Players[0].col[7])){
+					this.vv=0;
+					cont=false;
+					if(this.fly)
+						this.stop=true;
+					this.fly=false;
+					if(this.down){
+						if(this.dir)
+							this.anime=new Array(e.Resource.pic[7]);
+						else
+							this.anime=new Array(e.Resource.pic[14]);
+					}else{
+						if(this.jump){
+							this.vv=-5;
+							this.fly=true;
+						}
+					}
+				}
+			}
 			if(cont){
 				this.position.y+=0.1;
 				this.setCol();
@@ -168,6 +190,13 @@ Player.prototype.action=function(){		//每个时间间隔角色的状态改变
 			for(var j=0;j<e.Cubes.length;j++){
 				if(e.Cubes[j].isPointInPath(e.Players[0].col[2])||e.Cubes[j].isPointInPath(e.Players[0].col[3])){    	//跳起过程中头部是否碰撞
 					this.vv=0;
+					cont=false;
+				}
+			}
+			for(var j=1;j<e.Players.length;j++){
+				if(e.Players[j].isPointInPath(e.Players[0].col[2])||e.Players[j].isPointInPath(e.Players[0].col[3])){   
+					this.vv=0;
+					socket.emit("up",e.Players[j].name,-2);
 					cont=false;
 				}
 			}
@@ -195,6 +224,14 @@ Player.prototype.action=function(){		//每个时间间隔角色的状态改变
 				}else{
 					var bl=true;
 					socket.emit("push",e.Players[j].name,bl);
+				}
+			}
+			if(e.Players[j].isPointInPath(e.Players[0].col[4])||e.Players[j].isPointInPath(e.Players[0].col[5])){
+				if(e.Players[j].left){
+					trg_r=false;
+				}else{
+					var bl=true;
+					socket.emit("push",e.Players[j].name,false);
 				}
 			}
 		}
@@ -260,6 +297,13 @@ Engine.prototype.aaa=function(){
 		update();
 	}
 }
+
+function close(){
+	socket.emit("close",e.Players[0].name);
+	e.Players.splice(0,1);
+}
+window.onbeforeunload=close;
+
 
 function update(){				//准备完毕后引擎运行
 	e.ctx.clearRect(0,0,1000,1000);

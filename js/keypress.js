@@ -1,5 +1,8 @@
 window.onkeydown=function(event){
 		var ent=event||window.event;
+		if(ent&&ent.keyCode==32){
+			e.Players[0].throw=true;
+		}
 		if(ent&&ent.keyCode==38){
 			e.Players[0].jump=true;
 		}

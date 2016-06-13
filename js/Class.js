@@ -16,6 +16,7 @@ function Player(pos,sprite_index,name,index){
 	this.jump=false;
 	this.dir=true;
 	this.fly=true;
+	this.throw=false;
 	this.hv=0;		//横向速度
 	this.vv=0;		//竖直速度
 	this.animecount=0;
@@ -89,6 +90,21 @@ Player.prototype.push=function(dir){
 	}else{
 		this.position.x+=0.1;
 	}
+	this.setCol();
+}
+
+Player.prototype.bethrow=function(dir){
+	if(dir){
+		this.hv=-2;
+	}else{
+		this.hv=2;
+	}
+	this.stop=true;
+	this.vv=-5;
+}
+
+Player.prototype.back=function(){
+	this.position=new Position(maps[e.level].startpos.x,maps[e.level].startpos.y);
 	this.setCol();
 }
 
@@ -225,6 +241,9 @@ Player.prototype.action=function(){		//每个时间间隔角色的状态改变
 					var bl=true;
 					socket.emit("push",e.Players[j].name,bl);
 				}
+				if(e.Players[0].throw){
+					socket.emit("throw",e.Players[j].name,true);
+				}
 			}
 			if(e.Players[j].isPointInPath(e.Players[0].col[4])||e.Players[j].isPointInPath(e.Players[0].col[5])){
 				if(e.Players[j].left){
@@ -232,6 +251,9 @@ Player.prototype.action=function(){		//每个时间间隔角色的状态改变
 				}else{
 					var bl=true;
 					socket.emit("push",e.Players[j].name,false);
+				}
+				if(e.Players[0].throw){
+					socket.emit("throw",e.Players[j].name,false);
 				}
 			}
 		}
@@ -275,6 +297,25 @@ Cube.prototype.isPointInPath=function(pos){
 	}
 }
 
+function Map(){
+	this.startpos=new Position(200,300);
+	this.endpos=new Position(500,300);
+	this.Cubes=new Array();
+}
+
+Map.prototype.draw=function(){
+	e.ctx.fillStyle="rgba(247,240,210,0.7)";
+	e.ctx.fillRect(this.startpos.x-50,this.startpos.y-50,132,150);
+	e.ctx.fillStyle="black";
+	e.ctx.fillRect(this.endpos.x,this.endpos.y-50,3,50);
+	e.ctx.fillStyle="red";
+	e.ctx.beginPath();
+	e.ctx.moveTo(this.endpos.x+3,this.endpos.y-50);
+	e.ctx.lineTo(this.endpos.x+23,this.endpos.y-40);
+	e.ctx.lineTo(this.endpos.x+3,this.endpos.y-30);
+	e.ctx.fill();
+}
+
 function Engine(){
 	this.canvas=document.getElementById("mycanvas");
 	this.ctx=this.canvas.getContext("2d");
@@ -282,6 +323,9 @@ function Engine(){
 	this.Cubes=new Array();
 	this.Players=new Array();
 	this.gravity=3;			//重力
+	this.level=0;
+	this.ischeck=false;
+	this.checkcount=0;
 	this.Resource.check();
 }
 
@@ -305,16 +349,36 @@ function close(){
 window.onbeforeunload=close;
 
 
+function check(){
+	if(e.ischeck){
+		e.ctx.fillStyle="rgba(255,0,0,0.5)";
+		e.ctx.fillRect(0,0,1000,1000);
+		e.checkcount++;
+		if(e.Players[0].position.x<maps[e.level].startpos.x-50||e.Players[0].position.x>maps[e.level].startpos.x+82||e.Players[0].position.y>maps[e.level].startpos.y+100||e.Players[0].position.y<maps[e.level].startpos.y-50){
+			if(e.Players[0].animeIndex!=7&&e.Players[0].animeIndex!=14){
+				e.Players[0].back();
+			}
+		}
+		if(e.checkcount>3){
+			e.checkcount=0;
+			e.ischeck=false;
+		}
+	}
+}
+
 function update(){				//准备完毕后引擎运行
 	e.ctx.clearRect(0,0,1000,1000);
 	for(var i=0;i<e.Cubes.length;i++){
 		e.Cubes[i].draw();
 	}
+	maps[e.level].draw();
+	check();
 	e.Players[0].playanime();
 	for(var i=0;i<e.Players.length;i++){
 		e.Players[i].draw();
 	}
 	e.Players[0].action();
+	e.Players[0].throw=false;
 	socket.emit("postInfo",e.Players[0].position,e.Players[0].animeIndex,e.Players[0].name,e.Players[0].left,e.Players[0].right);
 	setTimeout(update,1000/60);
 }
@@ -322,6 +386,11 @@ function update(){				//准备完毕后引擎运行
 
 
 var socket=io.connect();
+var maps=new Array();
+var map1=new Map();
+map1.startpos=new Position(100,300);
+map1.endpos=new Position(700,400);
+map1.Cubes.push(new Cube(new Array(new Position(0,400),new Position(800,400),new Position(800,500),new Position(0,500))));
+maps.push(map1);
 var e=new Engine();
-e.Cubes.push(new Cube(new Array(new Position(0,450),new Position(800,450),new Position(800,500),new Position(0,500))));
-e.Cubes.push(new Cube(new Array(new Position(300,350),new Position(400,350),new Position(400,400),new Position(300,400))));
+e.Cubes=maps[0].Cubes;

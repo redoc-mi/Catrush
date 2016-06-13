@@ -12,8 +12,15 @@ function Player(name){
 
 var players=new Array();
 
+	function update(){
+		var t=Math.random()*3000+3000;
+		io.sockets.emit("check");
+		setTimeout(update,t);
+	}
+	setTimeout(update,3000);
 
 io.on("connection",function(socket){
+
 	socket.on("postInfo",function(pos,sprite,name){
 		socket.broadcast.emit("getInfo",pos,sprite,socket.index,name);
 	});
@@ -29,6 +36,24 @@ io.on("connection",function(socket){
 		players.push(new Player(name));
 		console.log(name+" is connected");
 		socket.emit("loginsuccess");
+	});
+	socket.on("push",function(name,bl){
+		socket.broadcast.emit("pushPlayer",name,bl);
+	});
+	socket.on("up",function(name,spd){
+		socket.broadcast.emit("Playerup",name,spd);
+	});
+	socket.on("close",function(name){
+		socket.broadcast.emit("logout",name);
+		for(var i=0;i<players.length;i++){
+			if(players[i].name==name){
+				players.splice(i,1);
+			}
+		}
+		console.log(name+" is disconnected");
+	});
+	socket.on("throw",function(name,dir){
+		socket.broadcast.emit("bethrow",name,dir);
 	});
 })
 

@@ -95,8 +95,10 @@ Player.prototype.push=function(dir){
 
 Player.prototype.bethrow=function(dir){
 	if(dir){
+		this.position.x-=0.1;
 		this.hv=-2;
 	}else{
+		this.position.x+=0.1;
 		this.hv=2;
 	}
 	this.stop=true;
@@ -241,7 +243,7 @@ Player.prototype.action=function(){		//每个时间间隔角色的状态改变
 					var bl=true;
 					socket.emit("push",e.Players[j].name,bl);
 				}
-				if(e.Players[0].throw){
+				if(e.Players[0].throw&&e.Players[0].animeIndex!=7&&e.Players[0].animeIndex!=14){
 					socket.emit("throw",e.Players[j].name,true);
 				}
 			}
@@ -252,7 +254,7 @@ Player.prototype.action=function(){		//每个时间间隔角色的状态改变
 					var bl=true;
 					socket.emit("push",e.Players[j].name,false);
 				}
-				if(e.Players[0].throw){
+				if(e.Players[0].throw&&e.Players[0].animeIndex!=7&&e.Players[0].animeIndex!=14){
 					socket.emit("throw",e.Players[j].name,false);
 				}
 			}
@@ -316,6 +318,7 @@ Map.prototype.draw=function(){
 	e.ctx.fill();
 }
 
+
 function Engine(){
 	this.canvas=document.getElementById("mycanvas");
 	this.ctx=this.canvas.getContext("2d");
@@ -324,6 +327,8 @@ function Engine(){
 	this.Players=new Array();
 	this.gravity=3;			//重力
 	this.level=0;
+	this.time=0;
+	this.playercount=0;
 	this.ischeck=false;
 	this.checkcount=0;
 	this.Resource.check();
@@ -342,6 +347,18 @@ Engine.prototype.aaa=function(){
 	}
 }
 
+Engine.prototype.drawInfo=function(){
+	this.ctx.fillStyle="gray";
+	this.ctx.fillRect(0,0,800,25);
+	this.ctx.fillStyle="black";
+	var mp="地图："+this.level;
+	this.ctx.fillText(mp,100,15);
+	var tm="剩余时间："+parseInt((300-this.time)/60)+":"+(300-this.time)%60;
+	this.ctx.fillText(tm,300,15);
+	var pc="玩家数："+this.playercount;
+	this.ctx.fillText(pc,500,15);
+}
+
 function close(){
 	socket.emit("close",e.Players[0].name);
 	e.Players.splice(0,1);
@@ -354,9 +371,11 @@ function check(){
 		e.ctx.fillStyle="rgba(255,0,0,0.5)";
 		e.ctx.fillRect(0,0,1000,1000);
 		e.checkcount++;
-		if(e.Players[0].position.x<maps[e.level].startpos.x-50||e.Players[0].position.x>maps[e.level].startpos.x+82||e.Players[0].position.y>maps[e.level].startpos.y+100||e.Players[0].position.y<maps[e.level].startpos.y-50){
-			if(e.Players[0].animeIndex!=7&&e.Players[0].animeIndex!=14){
-				e.Players[0].back();
+		if(e.checkcount<=1){
+			if(e.Players[0].position.x<maps[e.level].startpos.x-50||e.Players[0].position.x>maps[e.level].startpos.x+82||e.Players[0].position.y>maps[e.level].startpos.y+100||e.Players[0].position.y<maps[e.level].startpos.y-50){
+				if(e.Players[0].animeIndex!=7&&e.Players[0].animeIndex!=14){
+					e.Players[0].back();
+				}
 			}
 		}
 		if(e.checkcount>3){
@@ -377,6 +396,7 @@ function update(){				//准备完毕后引擎运行
 	for(var i=0;i<e.Players.length;i++){
 		e.Players[i].draw();
 	}
+	e.drawInfo();
 	e.Players[0].action();
 	e.Players[0].throw=false;
 	socket.emit("postInfo",e.Players[0].position,e.Players[0].animeIndex,e.Players[0].name,e.Players[0].left,e.Players[0].right);
@@ -392,5 +412,11 @@ map1.startpos=new Position(100,300);
 map1.endpos=new Position(700,400);
 map1.Cubes.push(new Cube(new Array(new Position(0,400),new Position(800,400),new Position(800,500),new Position(0,500))));
 maps.push(map1);
+var map2=new Map();
+map2.startpos=new Position(100,300);
+map2.endpos=new Position(375,350);
+map2.Cubes.push(new Cube(new Array(new Position(0,400),new Position(800,400),new Position(800,500),new Position(0,500))));
+map2.Cubes.push(new Cube(new Array(new Position(350,350),new Position(400,350),new Position(400,400),new Position(350,400))));
+maps.push(map2);
 var e=new Engine();
-e.Cubes=maps[0].Cubes;
+e.Cubes=maps[e.level].Cubes;

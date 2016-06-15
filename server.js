@@ -26,6 +26,7 @@ function timecount(){
 			if(level>1)
 				level=0;
 			io.sockets.emit("changemap",level);
+			time=0;
 			for(var i=0;i<players.length;i++){
 				players[i].win=false;
 			}

@@ -71,7 +71,31 @@ this.socket.on("bethrow",function(name,dir){
 
 this.socket.on("changemap",function(level){
 	e.level=level;
-	console.log(e.level);
-	console.log(maps[e.level]);
 	e.Cubes=maps[e.level].Cubes;
+	if(e.Players.length>0){
+		for(var i=0;i<e.Players.length;i++){
+			e.Players[i].win=false;
+		}
+		e.Players[0].position=new Position(maps[e.level].startpos.x,maps[e.level].startpos.y);
+	}
+});
+
+
+this.socket.on("sbwin",function(name){
+	for(var i=0;i<e.Players.length;i++){
+		if(e.Players[i].name==name){
+			e.Players[i].win=true;
+		}
+	}
+});
+
+this.socket.on("postmsg",function(name,msg){
+	e.content.value=e.content.value+name+":"+msg+"\r\n";
+	for(var i=0;i<e.Players.length;i++){
+		if(e.Players[i].name==name){
+			e.Players[i].sayct=0;
+			e.Players[i].saysth=true;
+			e.Players[i].saymsg=msg;
+		}
+	}
 });

@@ -1,5 +1,14 @@
 window.onkeydown=function(event){
 		var ent=event||window.event;
+		if(ent&&ent.keyCode==13){
+			if(e.talkboard){
+				if(e.tkb_txt.value!="")
+					sendmessage();
+				e.talkboard=false;
+			}else{
+				e.talkboard=true;
+			}
+		}
 		if(ent&&ent.keyCode==32){
 			e.Players[0].throw=true;
 		}

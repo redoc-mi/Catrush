@@ -11,9 +11,26 @@ console.log("server started");
 
 function Player(name){
 	this.name=name;
+	this.win=false;
 }
 
 function timecount(){
+	if(players.length>0){
+		var ct=0;
+		for(var i=0;i<players.length;i++){
+			if(players[i].win)
+				ct++;
+		}
+		if(ct==players.length){
+			level++;
+			if(level>1)
+				level=0;
+			io.sockets.emit("changemap",level);
+			for(var i=0;i<players.length;i++){
+				players[i].win=false;
+			}
+		}
+	}
 	if(time<300){
 		io.sockets.emit("timecount",time,players.length);
 		time++;
@@ -23,6 +40,9 @@ function timecount(){
 		if(level>1)
 			level=0;
 		io.sockets.emit("changemap",level);
+		for(var i=0;i<players.length;i++){
+			players[i].win=false;
+		}
 		time=0;
 		timecount();
 	}
@@ -71,6 +91,16 @@ io.on("connection",function(socket){
 	});
 	socket.on("throw",function(name,dir){
 		socket.broadcast.emit("bethrow",name,dir);
+	});
+	socket.on("win",function(name){
+		for(var i=0;i<players.length;i++){
+			if(players[i].name==name)
+				players[i].win=true;
+		}
+		socket.broadcast.emit("sbwin",name);
+	});
+	socket.on("sendmessage",function(name,msg){
+		io.sockets.emit("postmsg",name,msg);
 	});
 })
 

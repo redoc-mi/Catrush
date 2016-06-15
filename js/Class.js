@@ -19,11 +19,15 @@ function Player(pos,sprite_index,name,index){
 	this.throw=false;
 	this.hv=0;		//横向速度
 	this.vv=0;		//竖直速度
+	this.win=false;
 	this.animecount=0;
 	this.anime=new Array(e.Resource.pic[0]);
 	this.animeIndex=0;
 	this.col_width=20;
 	this.col_height=28;
+	this.saysth=false;
+	this.sayct=0;
+	this.saymsg="";
 	this.col=new Array();
 	this.setCol();
 }
@@ -43,6 +47,36 @@ Player.prototype.playanime=function(){		//播放角色动画
 	this.animecount++;
 }
 
+Player.prototype.say=function(){
+	if(this.saysth){
+		e.ctx.strokeStyle="black";
+		e.ctx.fillStyle="white";
+		e.ctx.beginPath();
+		var width=this.saymsg.getWidth();
+		e.ctx.moveTo(this.position.x+14-width/2,this.position.y-20);
+		e.ctx.lineTo(this.position.x+14+width/2,this.position.y-20);
+		e.ctx.lineTo(this.position.x+14+width/2,this.position.y-5);
+		e.ctx.lineTo(this.position.x+16,this.position.y-5);
+		e.ctx.lineTo(this.position.x+14,this.position.y);
+		e.ctx.lineTo(this.position.x+13,this.position.y-5);
+		e.ctx.lineTo(this.position.x+14-width/2,this.position.y-5);
+		e.ctx.closePath();
+		e.ctx.fill();
+		e.ctx.stroke();
+		e.ctx.textAlign="center";
+		e.ctx.fillStyle="black";
+		var index=0;
+		var wd=0;
+		e.ctx.fillText(this.saymsg,this.position.x+14,this.position.y-9);
+		this.sayct++;
+		if(this.sayct>360){
+			this.sayct=0;
+			this.saysth=false;
+			this.saymsg="";
+		}
+	}
+}
+
 Player.prototype.draw=function(){			//将图片绘制在canvas上
 	if(this.index==0)
 		e.ctx.fillStyle="green";
@@ -51,6 +85,7 @@ Player.prototype.draw=function(){			//将图片绘制在canvas上
 	e.ctx.textAlign="center";
 	e.ctx.fillText(this.name,this.position.x+16,this.position.y-5);
 	e.ctx.drawImage(this.sprite,this.position.x,this.position.y);
+	this.say();
 }
 
 Player.prototype.friction=function(){		//角色摩擦力作用
@@ -240,8 +275,7 @@ Player.prototype.action=function(){		//每个时间间隔角色的状态改变
 				if(e.Players[j].right){
 					trg_l=false;
 				}else{
-					var bl=true;
-					socket.emit("push",e.Players[j].name,bl);
+					socket.emit("push",e.Players[j].name,true);
 				}
 				if(e.Players[0].throw&&e.Players[0].animeIndex!=7&&e.Players[0].animeIndex!=14){
 					socket.emit("throw",e.Players[j].name,true);
@@ -251,7 +285,6 @@ Player.prototype.action=function(){		//每个时间间隔角色的状态改变
 				if(e.Players[j].left){
 					trg_r=false;
 				}else{
-					var bl=true;
 					socket.emit("push",e.Players[j].name,false);
 				}
 				if(e.Players[0].throw&&e.Players[0].animeIndex!=7&&e.Players[0].animeIndex!=14){
@@ -318,8 +351,27 @@ Map.prototype.draw=function(){
 	e.ctx.fill();
 }
 
+Map.prototype.check=function(){						//胜利检测
+
+	e.ctx.beginPath();
+	e.ctx.moveTo(e.Players[0].position.x+3,e.Players[0].position.y);
+	e.ctx.lineTo(e.Players[0].position.x+3+24,e.Players[0].position.y);
+	e.ctx.lineTo(e.Players[0].position.x+3+24,e.Players[0].position.y+32);
+	e.ctx.lineTo(e.Players[0].position.x+3,e.Players[0].position.y+32);
+	e.ctx.closePath();
+
+	if(e.ctx.isPointInPath(this.endpos.x,this.endpos.y-20)){
+		return true;
+	}else{
+		return false;
+	}
+
+}
 
 function Engine(){
+	this.tkb=document.getElementById("tkb");
+	this.content=document.getElementById("content");
+	this.tkb_txt=document.getElementById("tkb_txt");
 	this.canvas=document.getElementById("mycanvas");
 	this.ctx=this.canvas.getContext("2d");
 	this.Resource=new resource();
@@ -331,6 +383,7 @@ function Engine(){
 	this.playercount=0;
 	this.ischeck=false;
 	this.checkcount=0;
+	this.talkboard=false;
 	this.Resource.check();
 }
 
@@ -385,8 +438,30 @@ function check(){
 	}
 }
 
+function sendmessage(){
+	socket.emit("sendmessage",e.Players[0].name,e.tkb_txt.value.substring(0,30).replace(/(^\s*)|(\s*$)/g,''));
+	e.tkb_txt.value="";
+}
+
+String.prototype.getWidth = function(fontSize)  //获取字符串宽度
+{  
+    var span = document.getElementById("__getwidth");  
+    if (span == null) {  
+        span = document.createElement("span");  
+        span.id = "__getwidth";  
+        document.body.appendChild(span);  
+        span.style.visibility = "hidden";  
+        span.style.whiteSpace = "nowrap";  
+    }  
+    span.innerText = this;  
+    span.style.fontSize = fontSize + "px";  
+  
+    return span.offsetWidth;  
+}  
+
 function update(){				//准备完毕后引擎运行
 	e.ctx.clearRect(0,0,1000,1000);
+	e.Cubes=maps[e.level].Cubes;
 	for(var i=0;i<e.Cubes.length;i++){
 		e.Cubes[i].draw();
 	}
@@ -394,10 +469,22 @@ function update(){				//准备完毕后引擎运行
 	check();
 	e.Players[0].playanime();
 	for(var i=0;i<e.Players.length;i++){
-		e.Players[i].draw();
+		if(!e.Players[i].win)
+			e.Players[i].draw();
 	}
 	e.drawInfo();
 	e.Players[0].action();
+	if(maps[e.level].check()){
+		this.socket.emit("win",e.Players[0].name);
+		e.Players[0].win=true;
+	}
+	if(e.talkboard){
+		e.tkb.style.display="block";
+		e.content.focus();
+		e.tkb_txt.focus();
+	}
+	else
+		e.tkb.style.display="none";
 	e.Players[0].throw=false;
 	socket.emit("postInfo",e.Players[0].position,e.Players[0].animeIndex,e.Players[0].name,e.Players[0].left,e.Players[0].right);
 	setTimeout(update,1000/60);
@@ -419,4 +506,3 @@ map2.Cubes.push(new Cube(new Array(new Position(0,400),new Position(800,400),new
 map2.Cubes.push(new Cube(new Array(new Position(350,350),new Position(400,350),new Position(400,400),new Position(350,400))));
 maps.push(map2);
 var e=new Engine();
-e.Cubes=maps[e.level].Cubes;

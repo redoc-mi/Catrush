@@ -13,6 +13,8 @@
 			display: none;
 			margin: 0 auto;
 			background-color: rgb(113,203,225);
+			position: relative;
+			z-index: -1;
 		}
 		#ipt{
 			width: 800px;
@@ -26,6 +28,24 @@
 			color: red;
 			font-size: 10px;
 		}
+		#tkb{
+			position: relative;
+			border: 1px solid black;
+			width: 500px;
+			height: 300px;
+			display: none;
+			z-index: 10;
+			margin: -400px auto auto auto;
+			background-color: rgba(200,200,200,0.7);
+		}
+		#content{
+			background-color: rgba(200,200,200,0.7);
+			width: 494px;
+			height: 271px;
+		}
+		#bottom{
+			display: block;
+		}
 	</style>
 	<script src="/socket.io/socket.io.js" type="text/javascript"></script>
 </head>
@@ -35,6 +55,12 @@
 		<center><div id="tips"></div></center>
 	</div>
 	<canvas id="mycanvas" width="800" height="500"></canvas>
+	<div id="tkb">
+		<textarea id="content" onpropertychange="this.scrollTop=this.scrollHeight" onfocus="this.scrollTop=this.scrollHeight"></textarea>
+		<div id="bottom">
+			<input type="text" id="tkb_txt" style="width: 454px;background-color: rgba(255,255,255,0.7);"><input type="button" value="发送" onclick="sendmessage();">
+		</div>
+	</div>
 </body>
 	<script type="text/javascript" src="js/load_resources.js"></script>
 	<script type="text/javascript" src="js/Class.js"></script>

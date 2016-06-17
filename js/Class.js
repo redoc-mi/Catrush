@@ -78,13 +78,15 @@ Player.prototype.say=function(){
 }
 
 Player.prototype.draw=function(){			//将图片绘制在canvas上
-	if(this.index==0)
-		e.ctx.fillStyle="green";
-	else
-		e.ctx.fillStyle="white";
-	e.ctx.textAlign="center";
-	e.ctx.fillText(this.name,this.position.x+16,this.position.y-5);
-	e.ctx.drawImage(this.sprite,this.position.x,this.position.y);
+	if(!this.win){
+		if(this.index==0)
+			e.ctx.fillStyle="green";
+		else
+			e.ctx.fillStyle="white";
+		e.ctx.textAlign="center";
+		e.ctx.fillText(this.name,this.position.x+16,this.position.y-5);
+		e.ctx.drawImage(this.sprite,this.position.x,this.position.y);
+	}
 	this.say();
 }
 
@@ -213,21 +215,23 @@ Player.prototype.action=function(){		//每个时间间隔角色的状态改变
 				}
 			}
 			for(var j=1;j<e.Players.length;j++){
-				if(e.Players[j].isPointInPath(e.Players[0].col[6])||e.Players[j].isPointInPath(e.Players[0].col[7])){
-					this.vv=0;
-					cont=false;
-					if(this.fly)
-						this.stop=true;
-					this.fly=false;
-					if(this.down){
-						if(this.dir)
-							this.anime=new Array(e.Resource.pic[7]);
-						else
-							this.anime=new Array(e.Resource.pic[14]);
-					}else{
-						if(this.jump){
-							this.vv=-5;
-							this.fly=true;
+				if(!e.Players[j].win){
+					if(e.Players[j].isPointInPath(e.Players[0].col[6])||e.Players[j].isPointInPath(e.Players[0].col[7])){
+						this.vv=0;
+						cont=false;
+						if(this.fly)
+							this.stop=true;
+						this.fly=false;
+						if(this.down){
+							if(this.dir)
+								this.anime=new Array(e.Resource.pic[7]);
+							else
+								this.anime=new Array(e.Resource.pic[14]);
+						}else{
+							if(this.jump){
+								this.vv=-5;
+								this.fly=true;
+							}
 						}
 					}
 				}
@@ -247,10 +251,12 @@ Player.prototype.action=function(){		//每个时间间隔角色的状态改变
 				}
 			}
 			for(var j=1;j<e.Players.length;j++){
-				if(e.Players[j].isPointInPath(e.Players[0].col[2])||e.Players[j].isPointInPath(e.Players[0].col[3])){   
-					this.vv=0;
-					socket.emit("up",e.Players[j].name,-2);
-					cont=false;
+				if(!e.Players[j].win){
+					if(e.Players[j].isPointInPath(e.Players[0].col[2])||e.Players[j].isPointInPath(e.Players[0].col[3])){   
+						this.vv=0;
+						socket.emit("up",e.Players[j].name,-2);
+						cont=false;
+					}
 				}
 			}
 			if(cont){
@@ -271,24 +277,26 @@ Player.prototype.action=function(){		//每个时间间隔角色的状态改变
 			}
 		}
 		for(var j=1;j<e.Players.length;j++){
-			if(e.Players[j].isPointInPath(e.Players[0].col[0])||e.Players[j].isPointInPath(e.Players[0].col[1])){
-				if(e.Players[j].right){
-					trg_l=false;
-				}else{
-					socket.emit("push",e.Players[j].name,true);
+			if(!e.Players[j].win){
+				if(e.Players[j].isPointInPath(e.Players[0].col[0])||e.Players[j].isPointInPath(e.Players[0].col[1])){
+					if(e.Players[j].right){
+						trg_l=false;
+					}else{
+						socket.emit("push",e.Players[j].name,true);
+					}
+					if(e.Players[0].throw&&e.Players[0].animeIndex!=7&&e.Players[0].animeIndex!=14){
+						socket.emit("throw",e.Players[j].name,true);
+					}
 				}
-				if(e.Players[0].throw&&e.Players[0].animeIndex!=7&&e.Players[0].animeIndex!=14){
-					socket.emit("throw",e.Players[j].name,true);
-				}
-			}
-			if(e.Players[j].isPointInPath(e.Players[0].col[4])||e.Players[j].isPointInPath(e.Players[0].col[5])){
-				if(e.Players[j].left){
-					trg_r=false;
-				}else{
-					socket.emit("push",e.Players[j].name,false);
-				}
-				if(e.Players[0].throw&&e.Players[0].animeIndex!=7&&e.Players[0].animeIndex!=14){
-					socket.emit("throw",e.Players[j].name,false);
+				if(e.Players[j].isPointInPath(e.Players[0].col[4])||e.Players[j].isPointInPath(e.Players[0].col[5])){
+					if(e.Players[j].left){
+						trg_r=false;
+					}else{
+						socket.emit("push",e.Players[j].name,false);
+					}
+					if(e.Players[0].throw&&e.Players[0].animeIndex!=7&&e.Players[0].animeIndex!=14){
+						socket.emit("throw",e.Players[j].name,false);
+					}
 				}
 			}
 		}
@@ -469,7 +477,6 @@ function update(){				//准备完毕后引擎运行
 	check();
 	e.Players[0].playanime();
 	for(var i=0;i<e.Players.length;i++){
-		if(!e.Players[i].win)
 			e.Players[i].draw();
 	}
 	e.drawInfo();
@@ -477,6 +484,8 @@ function update(){				//准备完毕后引擎运行
 	if(maps[e.level].check()){
 		this.socket.emit("win",e.Players[0].name);
 		e.Players[0].win=true;
+		e.Players[0].stop=true;
+		e.Players[0].down=true;
 	}
 	if(e.talkboard){
 		e.tkb.style.display="block";
@@ -494,15 +503,4 @@ function update(){				//准备完毕后引擎运行
 
 var socket=io.connect();
 var maps=new Array();
-var map1=new Map();
-map1.startpos=new Position(100,300);
-map1.endpos=new Position(700,400);
-map1.Cubes.push(new Cube(new Array(new Position(0,400),new Position(800,400),new Position(800,500),new Position(0,500))));
-maps.push(map1);
-var map2=new Map();
-map2.startpos=new Position(100,300);
-map2.endpos=new Position(375,350);
-map2.Cubes.push(new Cube(new Array(new Position(0,400),new Position(800,400),new Position(800,500),new Position(0,500))));
-map2.Cubes.push(new Cube(new Array(new Position(350,350),new Position(400,350),new Position(400,400),new Position(350,400))));
-maps.push(map2);
 var e=new Engine();
